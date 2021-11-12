@@ -22,6 +22,8 @@ async function run() {
         await client.connect()
         const database = client.db('kayRings')
         const ringCollection = database.collection('ringCollection')
+        const ordersCollection = database.collection('ordersCollection')
+        const reviewsCollection = database.collection('reviewsCollection')
 
         // Get Ring Collection API 
         app.get('/ringCollection', async (req, res) => {
@@ -37,6 +39,46 @@ async function run() {
             const singeRing = await ringCollection.findOne(query)
             res.json(singeRing)
         })
+
+        // Place Order Post API
+        app.post('/placeOrder', async (req, res) => {
+            const order = req.body
+            const results = await ordersCollection.insertOne(order)
+            res.json(order)
+        })
+
+
+        // Get User Orders
+        app.post('/myOrders', async (req, res) => {
+            const userEmail = req.body.email
+            const query = { email: { $in: [userEmail] } }
+            const orders = await ordersCollection.find(query).toArray()
+            res.send(orders)
+        })
+
+        // Delete API
+        app.delete('/placeOrder/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) }
+            const result = await ordersCollection.deleteOne(query)
+            res.json(result)
+        })
+
+        // Reviews Post API
+        app.post('/review', async (req, res) => {
+            const review = req.body
+            const results = await reviewsCollection.insertOne(review)
+            res.json(review)
+        })
+
+
+        // Reviews Get API
+        app.get('/review', async (req, res) => {
+            const cursor = reviewsCollection.find({})
+            const reviews = await cursor.toArray()
+            res.send(reviews)
+        })
+
 
 
     }
