@@ -24,6 +24,7 @@ async function run() {
         const ringCollection = database.collection('ringCollection')
         const ordersCollection = database.collection('ordersCollection')
         const reviewsCollection = database.collection('reviewsCollection')
+        const userCollection = database.collection('users')
 
         // Get Ring Collection API 
         app.get('/ringCollection', async (req, res) => {
@@ -47,7 +48,6 @@ async function run() {
             res.json(order)
         })
 
-
         // Get User Orders
         app.post('/myOrders', async (req, res) => {
             const userEmail = req.body.email
@@ -56,7 +56,7 @@ async function run() {
             res.send(orders)
         })
 
-        // Delete API
+        // Order Delete API
         app.delete('/placeOrder/:id', async (req, res) => {
             const id = req.params.id
             const query = { _id: ObjectId(id) }
@@ -71,7 +71,6 @@ async function run() {
             res.json(review)
         })
 
-
         // Reviews Get API
         app.get('/review', async (req, res) => {
             const cursor = reviewsCollection.find({})
@@ -79,9 +78,80 @@ async function run() {
             res.send(reviews)
         })
 
+        // Users Post API
+        app.post('/users', async (req, res) => {
+            const user = req.body
+            const result = await userCollection.insertOne(user)
+            res.json(result)
+        })
 
+        // Get User Role
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email
+            const query = { email: email }
+            const user = await userCollection.findOne(query)
+            let isAdmin = false
+            if (user?.role === 'admin') {
+                isAdmin = true
+            }
 
+            res.json({ admin: isAdmin })
+        })
+
+        // Admin API
+        app.put('/makeAdmin', async (req, res) => {
+            const user = req.body
+            const filter = { email: user.email }
+            const updateDoc = { $set: { role: 'admin' } }
+            const result = await userCollection.updateOne(filter, updateDoc)
+            res.json(result)
+
+        })
+
+        // Get All Orders API 
+        app.get('/allOrders', async (req, res) => {
+            const cursor = ordersCollection.find({})
+            const orders = await cursor.toArray()
+            res.send(orders)
+        })
+
+        // Approve Order
+        app.put('/order/:id', async (req, res) => {
+            const orderId = req.params.id
+            const query = { _id: ObjectId(orderId) }
+
+            const updateDoc = {
+                $set: {
+                    status: "Shipped"
+                },
+            };
+            const result = await ordersCollection.updateOne(query, updateDoc);
+            res.send(result)
+        })
+
+        // Add Product API
+        app.post('/addProduct', async (req, res) => {
+            const product = req.body
+            const result = await ringCollection.insertOne(product)
+            res.json(result)
+        })
+
+        // Get All Products API 
+        app.get('/allProducts', async (req, res) => {
+            const cursor = ringCollection.find({})
+            const products = await cursor.toArray()
+            res.send(products)
+        })
+
+        // Delete Product API
+        app.delete('/deleteProduct/:id', async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) }
+            const result = await ringCollection.deleteOne(query)
+            res.json(result)
+        })
     }
+
     finally {
         // await client.close()
     }
